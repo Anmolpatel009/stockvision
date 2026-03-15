@@ -947,7 +947,6 @@
     </div>
   </div>
   
-  <script src="/socket.io/socket.io.js"></script>
   <script>
     function updateStockCards(prices) {
       const grid = document.getElementById('stocks-grid');
@@ -1071,37 +1070,21 @@
       else if (value > 40) bar.classList.add('warning');
     }
     
-    // Socket connection
-    const socket = io();
-    
-    socket.on('connect', () => {
-      console.log('Socket.IO connected!');
-      document.querySelector('.status-dot').classList.add('green');
-    });
-    
-    socket.on('disconnect', () => {
-      console.log('Socket.IO disconnected');
-      document.querySelector('.status-dot').classList.remove('green');
-    });
-    
-    socket.on('connect_error', (err) => {
-      console.error('Socket.IO connection error:', err.message);
-      document.querySelector('.status-dot').classList.add('red');
-    });
-    
-    socket.on('metrics', (data) => {
-      console.log('Received metrics update:', data);
-      updateMetrics(data);
-    });
-    
     // Fetch initial data immediately
     fetch('/api/metrics')
       .then(r => r.json())
       .then(data => {
         console.log('Initial data loaded:', data);
         updateMetrics(data);
+        document.querySelector('.status-dot').classList.add('green');
         initKernelVisualization();
       })
+      .catch(err => {
+        console.error('Failed to fetch initial data:', err);
+        document.querySelector('.status-dot').classList.remove('green');
+        document.querySelector('.status-dot').classList.add('red');
+        initKernelVisualization();
+      });
     
     // Kernel Visualization
     let heatmapData = [];
@@ -1202,19 +1185,19 @@
       document.getElementById('kernel-cycles').textContent = cycles + 'M';
     }
     
-    // Fetch initial data immediately
-    fetch('/api/metrics')
-      .then(r => r.json())
-      .then(data => {
-        console.log('Initial data loaded:', data);
-        updateMetrics(data);
-        initKernelVisualization();
-      })
-      .catch(err => console.error('Failed to fetch initial data:', err));
-    
-    // Fallback polling
+    // Polling for data updates
     setInterval(() => {
-      fetch('/api/metrics').then(r => r.json()).then(updateMetrics).catch(() => {});
+      fetch('/api/metrics')
+        .then(r => r.json())
+        .then(data => {
+          updateMetrics(data);
+          document.querySelector('.status-dot').classList.add('green');
+          document.querySelector('.status-dot').classList.remove('red');
+        })
+        .catch(() => {
+          document.querySelector('.status-dot').classList.remove('green');
+          document.querySelector('.status-dot').classList.add('red');
+        });
     }, 5000);
   </script>
 </body>
