@@ -43,7 +43,7 @@ let pythonProcess = null;
 function startPythonFetcher() {
   // 1. Detect Environment: Windows uses 'python', Linux/Mac uses 'python3'
   const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
-  
+  console.log(`[System] Script Path Check: ${path.join(__dirname, 'fetch_stocks.py')}`);
   console.log(`[System] Attempting to start kernel using: ${pythonCommand}`);
 
   pythonProcess = spawn(pythonCommand, [
