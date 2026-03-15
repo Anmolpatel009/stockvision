@@ -41,8 +41,9 @@ let latestMetrics = {
 let pythonProcess = null;
 
 function startPythonFetcher() {
-  // 1. Detect Environment: Windows uses 'python', Linux/Mac uses 'python3'
-  const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
+  // 1. Use absolute path for Linux to avoid PATH issues
+  // Windows uses 'python', Linux uses '/usr/bin/python3'
+  const pythonCommand = os.platform() === 'win32' ? 'python' : '/usr/bin/python3';
   console.log(`[System] Script Path Check: ${path.join(__dirname, 'fetch_stocks.py')}`);
   console.log(`[System] Attempting to start kernel using: ${pythonCommand}`);
 
@@ -71,16 +72,8 @@ function startPythonFetcher() {
   });
 
   pythonProcess.on('error', (err) => {
-    console.error(`[CRITICAL] Failed to spawn ${pythonCommand}:`, err.message);
-    
-    if (err.code === 'ENOENT') {
-      console.log('------------------------------------------------------------');
-      console.log(`REALITY CHECK: The command "${pythonCommand}" was not found.`);
-      console.log('1. If on Windows, ensure Python is in your PATH.');
-      console.log('2. If on Linux/Oracle, run: sudo apt install python3');
-      console.log('3. Try changing "python3" to "python" in server.js.');
-      console.log('------------------------------------------------------------');
-    }
+    console.error(`[FATAL] Kernel failed: ${err.message}`);
+    process.exit(1); // Force Railway to stop the container
   });
 
   pythonProcess.on('close', (code) => {
@@ -118,6 +111,8 @@ server.listen(PORT, () => {
   console.log(`Quant-Kernel Dashboard running on http://localhost:${PORT}`);
   console.log(`Fetching real stock data from Yahoo Finance...`);
   
-  // Start Python fetcher
-  startPythonFetcher();
+  // Start Python fetcher if not skipped
+  if (process.env.SKIP_PYTHON_FETCHER !== 'true') {
+    startPythonFetcher();
+  }
 });

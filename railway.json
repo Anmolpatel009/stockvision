@@ -1,0 +1,8 @@
+{
+  "build": {
+    "command": "npm install && pip install -r dashboard/requirements.txt"
+  },
+  "start": {
+    "command": "bash start.sh"
+  }
+}

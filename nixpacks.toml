@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["python3", "python3Packages.pip", "nodejs_20"]
+
+[phases.install]
+cmds = [
+  "npm install",
+  "pip install --break-system-packages -r dashboard/requirements.txt"
+]
+
+[phases.start]
+cmd = "node dashboard/server.js"
