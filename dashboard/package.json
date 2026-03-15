@@ -4,7 +4,8 @@
   "description": "Quant-Kernel Web Dashboard",
   "scripts": {
     "dev": "node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "pip install -r requirements.txt"
   },
   "dependencies": {
     "express": "^4.18.2",

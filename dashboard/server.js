@@ -40,12 +40,11 @@ let latestMetrics = {
 let pythonProcess = null;
 
 function startPythonFetcher() {
-  // Use nix-shell to provide Python with required packages
-  pythonProcess = spawn('nix-shell', [
-    '-p', 'python3', 'python3Packages.yfinance', 'python3Packages.numpy', 'python3Packages.requests',
-    '--run', 'python3 dashboard/fetch_stocks.py'
+  // Call Python directly without nix-shell
+  pythonProcess = spawn('python3', [
+    path.join(__dirname, 'fetch_stocks.py')
   ], {
-    cwd: __dirname + '/..',
+    cwd: __dirname,
     stdio: ['pipe', 'pipe', 'pipe'],
     env: { ...process.env, PYTHONUNBUFFERED: '1' }
   });
