@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
+const os = require('os'); // Add this at the top of your file
 
 const app = express();
 const server = http.createServer(app);
@@ -40,12 +41,17 @@ let latestMetrics = {
 let pythonProcess = null;
 
 function startPythonFetcher() {
-  // Call Python directly without nix-shell
-  pythonProcess = spawn('python3', [
+  // 1. Detect Environment: Windows uses 'python', Linux/Mac uses 'python3'
+  const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
+  
+  console.log(`[System] Attempting to start kernel using: ${pythonCommand}`);
+
+  pythonProcess = spawn(pythonCommand, [
     path.join(__dirname, 'fetch_stocks.py')
   ], {
     cwd: __dirname,
     stdio: ['pipe', 'pipe', 'pipe'],
+    // Use an unbuffered environment so logs show up immediately
     env: { ...process.env, PYTHONUNBUFFERED: '1' }
   });
 
@@ -60,22 +66,30 @@ function startPythonFetcher() {
   });
 
   pythonProcess.stderr.on('data', (data) => {
+    // If it's just a warning (like yfinance deprecation), use console.warn
     console.error(`[Python Error] ${data}`);
   });
 
   pythonProcess.on('error', (err) => {
-    console.error('Failed to start Python fetcher:', err.message);
-    console.log('Note: Install Python with yfinance to fetch real stock data');
+    console.error(`[CRITICAL] Failed to spawn ${pythonCommand}:`, err.message);
+    
+    if (err.code === 'ENOENT') {
+      console.log('------------------------------------------------------------');
+      console.log(`REALITY CHECK: The command "${pythonCommand}" was not found.`);
+      console.log('1. If on Windows, ensure Python is in your PATH.');
+      console.log('2. If on Linux/Oracle, run: sudo apt install python3');
+      console.log('3. Try changing "python3" to "python" in server.js.');
+      console.log('------------------------------------------------------------');
+    }
   });
 
   pythonProcess.on('close', (code) => {
-    console.log(`Python fetcher exited with code ${code}`);
-    // Restart after 5 seconds if it crashed
-    if (code !== 0) {
-      setTimeout(() => {
-        console.log('Restarting Python fetcher...');
-        startPythonFetcher();
-      }, 5000);
+    console.log(`[Kernel] Process exited with code ${code}`);
+    
+    // Only restart if it wasn't a clean exit (code 0)
+    if (code !== 0 && code !== null) {
+      console.log('[Kernel] Restarting in 5s due to abnormal exit...');
+      setTimeout(() => startPythonFetcher(), 5000);
     }
   });
 }
