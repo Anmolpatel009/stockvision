@@ -40,36 +40,51 @@ let latestMetrics = {
 let pythonProcess = null;
 
 function startPythonFetcher() {
+  // Use nix-shell to provide Python with required packages
   pythonProcess = spawn('nix-shell', [
     '-p', 'python3', 'python3Packages.yfinance', 'python3Packages.numpy', 'python3Packages.requests',
     '--run', 'python3 dashboard/fetch_stocks.py'
   ], {
     cwd: __dirname + '/..',
-    stdio: ['pipe', 'pipe', 'pipe']
+    stdio: ['pipe', 'pipe', 'pipe'],
+    env: { ...process.env, PYTHONUNBUFFERED: '1' }
   });
 
+  let stdoutBuffer = '';
   pythonProcess.stdout.on('data', (data) => {
-    // Parse the printed metrics
-    const lines = data.toString().trim().split('\n');
+    stdoutBuffer += data.toString();
+    const lines = stdoutBuffer.split('\n');
+    stdoutBuffer = lines.pop() || '';
     for (const line of lines) {
-      if (line.includes('Prices:')) {
-        // Extract JSON from console output - skip for now
-      }
+      if (line.trim()) console.log(`[Python] ${line}`);
     }
   });
 
   pythonProcess.stderr.on('data', (data) => {
-    console.log(`Python: ${data}`);
+    console.error(`[Python Error] ${data}`);
+  });
+
+  pythonProcess.on('error', (err) => {
+    console.error('Failed to start Python fetcher:', err.message);
+    console.log('Note: Install Python with yfinance to fetch real stock data');
   });
 
   pythonProcess.on('close', (code) => {
     console.log(`Python fetcher exited with code ${code}`);
+    // Restart after 5 seconds if it crashed
+    if (code !== 0) {
+      setTimeout(() => {
+        console.log('Restarting Python fetcher...');
+        startPythonFetcher();
+      }, 5000);
+    }
   });
 }
 
 // API endpoint for metrics (called by Python fetcher)
 app.post('/api/metrics', (req, res) => {
   latestMetrics = { ...latestMetrics, ...req.body, timestamp: Date.now() };
+  console.log(`[Server] Received metrics update - Stocks: ${Object.keys(latestMetrics.prices || {}).length}, Regime: ${latestMetrics.regime}`);
   io.emit('metrics', latestMetrics);
   res.json({ success: true });
 });
@@ -91,9 +106,5 @@ server.listen(PORT, () => {
   console.log(`Fetching real stock data from Yahoo Finance...`);
   
   // Start Python fetcher
-  try {
-    startPythonFetcher();
-  } catch (e) {
-    console.log('Note: Python fetcher not available. Using simulation mode.');
-  }
+  startPythonFetcher();
 });
