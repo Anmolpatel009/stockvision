@@ -1,0 +1,13 @@
+[build]
+  publish = "dashboard/public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/metrics"
+  to = "/.netlify/functions/metrics"
+  status = 200
+
+[[redirects]]
+  from = "/api/stocks"
+  to = "/.netlify/functions/metrics"
+  status = 200
