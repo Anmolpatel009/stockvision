@@ -1,14 +1,16 @@
 #!/bin/bash
 # Start script for Railpack deployment
-# Changes to dashboard directory and starts the Node.js server
+# Changes to dashboard directory, installs Python dependencies, and starts the Node.js server
 
 echo "Starting Quant-Kernel Dashboard..."
 cd dashboard
 
-# Install Node.js dependencies if needed
-echo "Checking Node.js dependencies..."
-npm install
+# Install Python requirements if they exist
+if [ -f "requirements.txt" ]; then
+    echo "Installing Python dependencies..."
+    pip install -r requirements.txt
+fi
 
-# Start the server
+# Start the Node.js server
 echo "Starting server..."
-npm start
+node server.js
