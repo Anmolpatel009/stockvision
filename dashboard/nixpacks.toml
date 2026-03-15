@@ -1,0 +1,16 @@
+providers = ["node", "python"]
+
+[phases.setup]
+# Using specific versions ensures the "90 LPA" stability you're aiming for
+nixPkgs = ["python3", "python3Packages.pip", "nodejs_20"]
+
+[phases.install]
+# We tell pip exactly where the requirements file is
+cmds = [
+    "npm install", 
+    "pip install -r dashboard/requirements.txt"
+]
+
+[phases.start]
+# This ensures Railway uses your start script
+cmd = "bash start.sh"
