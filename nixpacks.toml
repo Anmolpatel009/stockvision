@@ -1,14 +1,14 @@
 [phases.setup]
-# Syntax Fix: Must be an array ["a", "b"]
-nixPkgs = ["python3", "python3Packages.pip", "nodejs_20"]
+# We add stdenv and libstdcxx to provide the missing .so files
+nixPkgs = ["python3", "python3Packages.pip", "nodejs_20", "stdenv", "libstdcxx5"]
 
 [phases.install]
 cmds = [
   "npm install",
-  # Installs your Quant-Kernel dependencies
-  "pip install --break-system-packages -r dashboard/requirements.txt"
+  # We use the --break-system-packages flag for modern Debian/Nix environments
+  "pip install --break-system-packages yfinance pandas numpy"
 ]
 
 [phases.start]
-# Points directly to your entry point
+# Absolute path to ensure the Node server finds the script
 cmd = "node dashboard/server.js"
