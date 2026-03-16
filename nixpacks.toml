@@ -1,6 +1,5 @@
 [phases.setup]
-# We add stdenv and libstdcxx to provide the missing .so files
-nixPkgs = ["python3", "python3Packages.pip", "nodejs_20", "stdenv", "libstdcxx5"]
+pkgs = ["python311", "python311Packages.pip", "nodejs_20"]
 
 [phases.install]
 cmds = [
