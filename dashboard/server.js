@@ -41,9 +41,9 @@ let latestMetrics = {
 let pythonProcess = null;
 
 function startPythonFetcher() {
-  // 1. Use absolute path for Linux to avoid PATH issues
-  // Windows uses 'python', Linux uses '/usr/bin/python3'
-  const pythonCommand = os.platform() === 'win32' ? 'python' : '/usr/bin/python3';
+  // Use 'python3' for Linux/Mac, 'python' for Windows - let PATH resolve the location
+  const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
+  
   console.log(`[System] Script Path Check: ${path.join(__dirname, 'fetch_stocks.py')}`);
   console.log(`[System] Attempting to start kernel using: ${pythonCommand}`);
 
@@ -72,17 +72,22 @@ function startPythonFetcher() {
   });
 
   pythonProcess.on('error', (err) => {
-    console.error(`[FATAL] Kernel failed: ${err.message}`);
-    process.exit(1); // Force Railway to stop the container
+    console.error(`[FATAL] Kernel failed to start: ${err.message}`);
+    console.error('[Server] Continuing without Python fetcher - server will still serve cached metrics');
+    // Don't exit the process - allow server to run without Python fetcher
+    pythonProcess = null;
   });
 
   pythonProcess.on('close', (code) => {
     console.log(`[Kernel] Process exited with code ${code}`);
     
-    // Only restart if it wasn't a clean exit (code 0)
-    if (code !== 0 && code !== null) {
+    // Only restart if it wasn't a clean exit (code 0) and we want to restart
+    if (code !== 0 && code !== null && process.env.SKIP_PYTHON_FETCHER !== 'true') {
       console.log('[Kernel] Restarting in 5s due to abnormal exit...');
       setTimeout(() => startPythonFetcher(), 5000);
+    } else {
+      console.log('[Kernel] Python fetcher stopped - not restarting');
+      pythonProcess = null;
     }
   });
 }
