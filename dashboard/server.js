@@ -41,8 +41,11 @@ let latestMetrics = {
 let pythonProcess = null;
 
 function startPythonFetcher() {
-  // Use 'python3' for Linux/Mac, 'python' for Windows - let PATH resolve the location
-  const pythonCommand = os.platform() === 'win32' ? 'python' : 'python3';
+ // Use virtual environment's python
+    const pythonPath = path.join(__dirname, 'venv', 
+        os.platform() === 'win32' ? 'Scripts' : 'bin', 
+        os.platform() === 'win32' ? 'python.exe' : 'python');
+    const pythonCommand = pythonPath;
   
   console.log(`[System] Script Path Check: ${path.join(__dirname, 'fetch_stocks.py')}`);
   console.log(`[System] Attempting to start kernel using: ${pythonCommand}`);
