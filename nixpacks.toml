@@ -1,13 +1,15 @@
 [phases.setup]
-pkgs = ["python311", "python311Packages.pip", "nodejs_20", "stdenv", "libstdcxx5"]
+# We include python311Packages.pip to ensure the pip binary is explicitly built
+nixPkgs = ["python3", "python311Packages.pip", "nodejs_20", "stdenv", "libstdcxx5"]
 
 [phases.install]
 cmds = [
   "npm install",
-  # We use the --break-system-packages flag for modern Debian/Nix environments
-  "pip install --break-system-packages yfinance pandas numpy"
+  # Using 'python3 -m pip' is safer than just 'pip' as it guarantees 
+  # the command is linked to the Python runtime we just installed.
+  "python3 -m pip install --break-system-packages yfinance pandas numpy"
 ]
 
 [phases.start]
-# Absolute path to ensure the Node server finds the script
+# Double check: Is server.js inside the dashboard folder?
 cmd = "node dashboard/server.js"
