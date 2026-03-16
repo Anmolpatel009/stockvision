@@ -1,5 +1,12 @@
 [phases.setup]
-nixPkgs = ["python3", "python3Packages.pip", "nodejs_20", "glibc", "gcc", "libstdc++"]
+nixPkgs = [
+  "python3",
+  "python3Packages.pip",
+  "nodejs_20",
+  "glibc",
+  "gcc",
+  "libstdc++"
+]
 
 [phases.install]
 cmds = [
